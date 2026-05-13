@@ -1,0 +1,150 @@
+package com.supermart;
+import java.util.*;
+
+class Product {
+    String name; double price;
+    Product(String n,double p){ name=n; price=p; }
+}
+
+class CartItem {
+    Product p; int qty;
+    CartItem(Product p,int q){ this.p=p; this.qty=q; }
+    double total(){ retur1n p.price * qty; }
+    public String toString(){ return p.name+" x"+qty+" = ₹"+total(); }
+}
+
+public class SuperMart {
+
+    public static void main(String[] args){
+        Scanner sc = new Scanner(System.in);
+        Random rand = new Random();
+
+        // ⭐ EXTRA PRODUCTS ADDED
+        Product[] items = {
+            new Product("Apple",30), new Product("Milk",40),
+            new Product("Rice",60), new Product("Oil",150),
+            new Product("Bread",25), new Product("Chocolate",50),
+            new Product("Soap",20), new Product("Juice",35),
+            new Product("Sugar",45), new Product("Shampoo",90)
+        };
+
+        ArrayList<CartItem> cart = new ArrayList<>();
+
+        while(true){
+            System.out.println("\n------ SuperMart Menu ------");
+            listItems(items);
+
+            System.out.print("\n1.Add  2.Remove  3.Cart  4.Bill  5.Exit : ");
+            int ch = sc.nextInt(); sc.nextLine();
+
+            switch(ch){
+                case 1 -> add(cart, items, sc);
+                case 2 -> remove(cart, sc);
+                case 3 -> view(cart);
+                case 4 -> bill(cart, sc, rand);
+                case 5 -> { System.out.println("Thank you! Visit again."); return; }
+                default -> System.out.println("Invalid choice!");
+            }
+        }
+    }
+
+    // ⭐ Show Product List Short Version
+    static void listItems(Product[] items){
+        for(int i=0;i<items.length;i++)
+            System.out.println((i+1)+". "+items[i].name+" - ₹"+items[i].price);
+    }
+
+    // ⭐ Add Item
+    static void add(ArrayList<CartItem> cart, Product[] items, Scanner sc){
+        System.out.print("Product No: "); 
+        int n = sc.nextInt();
+        System.out.print("Quantity: "); 
+        int q = sc.nextInt(); sc.nextLine();
+
+        if(n<1 || n>items.length || q<=0){ System.out.println("Invalid!"); return; }
+
+        Product p = items[n-1];
+
+        for(CartItem c:cart)
+            if(c.p.name.equals(p.name)){ c.qty += q; view(cart); return; }
+
+        cart.add(new CartItem(p,q));
+        view(cart);
+    }
+
+    // ⭐ Remove Item 
+    static void remove(ArrayList<CartItem> cart, Scanner sc){
+        if(cart.isEmpty()){ System.out.println("Cart empty!"); return; }
+
+        view(cart);
+        System.out.print("Item No to remove: "); 
+        int n = sc.nextInt();
+        System.out.print("Qty: "); 
+        int q = sc.nextInt(); sc.nextLine();
+
+        if(n<1 || n>cart.size()){ System.out.println("Invalid!"); return; }
+
+        CartItem it = cart.get(n-1);
+        if(q >= it.qty) cart.remove(it); 
+        else it.qty -= q;
+
+        view(cart);
+    }
+
+    // ⭐ View Cart
+    static void view(ArrayList<CartItem> cart){
+        if(cart.isEmpty()){ System.out.println("Cart empty!"); return; }
+
+        System.out.println("\n------ Cart ------");
+        double sum = 0;
+        for(int i=0;i<cart.size();i++){
+            System.out.println((i+1)+". "+cart.get(i));
+            sum += cart.get(i).total();
+        }
+        System.out.println("Subtotal: ₹"+sum);
+    }
+
+    // ⭐ Bill + Voice
+    static void bill(ArrayList<CartItem> cart, Scanner sc, Random rand){
+        if(cart.isEmpty()){ System.out.println("Cart empty!"); return; }
+
+        System.out.print("Customer Name: "); 
+        String name = sc.nextLine();
+        System.out.print("Mobile Number: "); 
+        String num = sc.nextLine();
+
+        double sub = 0;
+        for(CartItem c : cart) sub += c.total();
+
+        double gst = sub*0.18;
+        double disc = sub>500 ? sub*0.10 : 0;
+        double lucky = rand.nextInt(51);
+        double total = sub + gst - disc - lucky;
+
+        System.out.println("\n===== BILL =====");
+        cart.forEach(System.out::println);
+        System.out.println("Subtotal: ₹"+sub);
+        System.out.println("GST 20%: ₹"+gst);
+        System.out.println("Discount: ₹"+disc);
+        System.out.println("Lucky Offer: ₹"+lucky);
+        System.out.println("TOTAL PAY: ₹"+total);
+
+        System.out.println("\nPayment Successful ✔");
+        System.out.println("Thank you, "+name+"!");
+
+        voice("Hello "+name+". Your total bill is "+total+" rupees. Payment successful.");
+    }
+
+    // ⭐ Voice
+    static void voice(String msg){
+        try{
+            Runtime.getRuntime().exec(
+                "PowerShell -Command \"Add-Type -AssemblyName System.Speech;" +
+                "$s=New-Object System.Speech.Synthesis.SpeechSynthesizer;" +
+                "$s.Speak('"+msg+"');\""
+            );
+        }catch(Exception e){
+            System.out.println("Voice error!");
+        }
+    }
+}
